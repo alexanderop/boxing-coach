@@ -1,16 +1,17 @@
 # Boxing Coach
 
-A local-first interval timer PWA for AMRAP, For Time, EMOM, and Tabata workouts. It is built from this repository's Vue starter and follows its Effect, Dexie, testing, accessibility, and offline-first patterns.
+A boxing coach in your pocket: a local-first PWA that calls combinations out loud, runs bag rounds and drills, and tracks which combinations you have mastered. Live at <https://alexanderop.github.io/boxing-coach/>.
 
-The product specification and source reference archive live in [`spec/smartwod-timer-clone`](spec/smartwod-timer-clone/). The archived Google Play images are design references only; the implemented interface and brand are original.
+It started as a copy of the [workout timer](https://github.com/alexanderop/workoutTimer) and keeps that app's timer engine, design system and Effect, Dexie, testing and offline-first patterns.
 
 ## Features
 
-- Four configurable workout modes with an authoritative timestamp-based timer
-- Countdown, pause/resume, round tracking, sound, vibration, and screen wake lock
-- Crash and reload recovery for the single active workout
-- Reusable presets with duplicate, edit, and delete actions
-- Workout history, result notes, round splits, and session details
+- A library of thirty combinations in learning order, each with an animation, the hand for every punch, and the gym's number shorthand
+- A level per combination and drill: new, learning, known
+- Bag rounds with a voice coach that calls combinations by name or by number, from your own list or a fixed level
+- Ready-made programs (Classic 6, Beginner 3) with a theme per round
+- Eight drills: jump rope, footwork, defense, shadow boxing and bag rounds
+- Workout history, presets, result notes and session details
 - English and German UI with light, dark, and system themes
 - On-device IndexedDB storage plus validated JSON backup and restore
 - Installable PWA that works offline with no account or backend

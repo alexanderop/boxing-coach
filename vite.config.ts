@@ -18,19 +18,21 @@ export default defineConfig({
       // 'prompt' shows an in-app "update available" banner instead of silently
       // swapping the service worker — see src/composables/usePwaUpdate.ts.
       registerType: 'prompt',
-      // Icons are generated at dev/build time from public/favicon.svg via
+      // Icons are generated at dev/build time from public/logo.png via
       // pwa-assets.config.ts and injected into the manifest automatically.
       pwaAssets: {
         config: true,
       },
       manifest: {
         name: 'Boxing Coach',
-        short_name: 'Timer',
+        short_name: 'Boxing',
         description: 'Boxing coach: called combinations, bag rounds and drills, offline',
         // Hex mirror of --primary in src/style.css (manifests can't use CSS
         // variables) — update this if the primary token's hue ever changes.
-        theme_color: '#7c3aed',
-        background_color: '#ffffff',
+        theme_color: '#dc2626',
+        // The icon sits on near-black, so the launch screen does too: a white
+        // flash around a dark icon reads as a glitch.
+        background_color: '#0a0a0a',
         display: 'standalone',
       },
       workbox: {

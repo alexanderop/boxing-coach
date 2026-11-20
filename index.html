@@ -2,16 +2,20 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <!-- viewport-fit=cover is required for env(safe-area-inset-*) to be non-zero
          on notched devices when the app is installed as a standalone PWA. -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="description" content="A fast, local-first workout timer for AMRAP, For Time, EMOM, and Tabata training" />
+    <meta
+      name="description"
+      content="A boxing coach in your pocket: called combinations, bag rounds, jump rope and footwork drills. Works offline."
+    />
     <!-- Correct chrome color before any JS runs. These only see the OS
          preference, so src/lib/themeColor.ts replaces them with a single
          unconditional tag once the app knows the user's actual theme. -->
     <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#0a0a0a" media="(prefers-color-scheme: dark)" />
+    <meta name="apple-mobile-web-app-title" content="Boxing Coach" />
+    <meta name="application-name" content="Boxing Coach" />
     <title>Boxing Coach</title>
   </head>
   <body>
