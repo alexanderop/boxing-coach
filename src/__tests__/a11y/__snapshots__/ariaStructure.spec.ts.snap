@@ -1,0 +1,18 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`accessibility tree > the home screen exposes each bag session as a button 1`] = `
+- region "Bag work":
+  - heading "Bag work" [level=2]
+  - button "Freestyle Rounds of called combinations"
+  - button "Classic 6 Warm-up, power, speed, endurance"
+  - button "Beginner 3 Three short rounds to start with"
+`;
+
+exports[`accessibility tree > the tab bar names all destinations 1`] = `
+- navigation "Main navigation":
+  - button "Train"
+  - button "Combos"
+  - button "Drills"
+  - button "History"
+  - button "Settings"
+`;

@@ -1,0 +1,100 @@
+import { Effect } from 'effect'
+import { describe, expect, it } from 'vitest'
+import {
+  DEFAULT_TIMER_SETTINGS,
+  decodeNewSession,
+  decodePresetDraft,
+  decodeTimerSettings,
+  defaultTimerSettingsAt,
+} from '@/db/converters'
+
+const v1SettingsRow = {
+  id: 'timer',
+  soundEnabled: true,
+  hapticsEnabled: true,
+  spokenCountdownEnabled: false,
+  startCountdownMs: 3_000,
+  keepAwake: true,
+  updatedAt: 1,
+}
+
+describe('workout schemas', () => {
+  it('materializes the canonical settings with the repository clock', () => {
+    expect(defaultTimerSettingsAt(42)).toEqual({ ...DEFAULT_TIMER_SETTINGS, updatedAt: 42 })
+  })
+
+  it('rejects an AMRAP without a positive duration', async () => {
+    await expect(
+      Effect.runPromise(
+        decodeNewSession({
+          config: { mode: 'amrap', durationMs: 0 },
+          workoutNotes: '',
+          countdownDurationMs: 3_000,
+        }),
+      ),
+    ).rejects.toBeDefined()
+  })
+
+  it('trims preset names and workout notes', async () => {
+    const draft = await Effect.runPromise(
+      decodePresetDraft({
+        name: '  Fast eight  ',
+        config: { mode: 'tabata', workMs: 20_000, restMs: 10_000, rounds: 8 },
+        workoutNotes: '  burpees  ',
+      }),
+    )
+    expect(draft).toMatchObject({ name: 'Fast eight', workoutNotes: 'burpees' })
+  })
+
+  it('accepts a boxing config, and refuses a pace or level the setup screen never offers', async () => {
+    const boxing = {
+      mode: 'boxing',
+      workMs: 180_000,
+      restMs: 60_000,
+      rounds: 6,
+      callouts: 'basic',
+      paceMs: 5_000,
+      themes: ['warmup', 'speed'],
+    }
+    const decode = (config: typeof boxing & { callsAs?: string }) =>
+      Effect.runPromise(decodePresetDraft({ name: 'Bag work', config, workoutNotes: '' }))
+
+    await expect(decode(boxing)).resolves.toMatchObject({ config: boxing })
+    await expect(decode({ ...boxing, paceMs: 4_000 })).rejects.toBeDefined()
+    await expect(decode({ ...boxing, callouts: 'expert' })).rejects.toBeDefined()
+    await expect(decode({ ...boxing, themes: ['sparring'] })).rejects.toBeDefined()
+    await expect(decode({ ...boxing, callsAs: 'numbers' })).resolves.toMatchObject({
+      config: { callsAs: 'numbers' },
+    })
+    await expect(decode({ ...boxing, callsAs: 'letters' })).rejects.toBeDefined()
+  })
+
+  /** A boxing preset saved before the choice existed has no `callsAs`, and was using names. */
+  it('reads a boxing config saved before combinations could be called by number', async () => {
+    const saved = {
+      mode: 'boxing',
+      workMs: 180_000,
+      restMs: 60_000,
+      rounds: 6,
+      callouts: 'basic',
+      paceMs: 5_000,
+      themes: [],
+    }
+    const draft = await Effect.runPromise(
+      decodePresetDraft({ name: 'Bag work', config: saved, workoutNotes: '' }),
+    )
+
+    expect(draft.config).toEqual({ ...saved, callsAs: 'names', pool: [] })
+  })
+
+  it('defaults soundVolume to full for settings rows written before db v2', async () => {
+    const settings = await Effect.runPromise(decodeTimerSettings(v1SettingsRow))
+    expect(settings.soundVolume).toBe(1)
+  })
+
+  it('rejects a soundVolume outside 0..1', async () => {
+    await expect(
+      Effect.runPromise(decodeTimerSettings({ ...v1SettingsRow, soundVolume: 2 })),
+    ).rejects.toBeDefined()
+  })
+})

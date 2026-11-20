@@ -1,0 +1,61 @@
+import { Atom } from '@effect/atom-vue'
+import { Effect } from 'effect'
+import { dbLayer, type DbServices } from './layer'
+
+export const SESSIONS_KEY = 'sessions'
+export const PRESETS_KEY = 'presets'
+export const SETTINGS_KEY = 'timer-settings'
+
+/**
+ * The layer stack behind every read and write atom, built once per registry.
+ *
+ * `keepAlive` because the Dexie connection's lifetime is a decision, not an
+ * accident of mount ordering. Without it the runtime atom is disposed as soon
+ * as no db-backed atom is subscribed — one tick with nothing mounted closes the
+ * database and the next screen reopens it. Today every screen happens to read
+ * a table, and a route change unmounts and remounts within the same tick, so
+ * that gap never opens; the moment one screen stops reading, it would. Held
+ * open until `registry.dispose()`, which is what `renderApp` calls per browser
+ * test — so the connection still goes with the test rather than the page.
+ */
+export const dbRuntime = Atom.runtime(dbLayer).pipe(Atom.keepAlive)
+
+/**
+ * A write edge into the database. Programs must already have `never` in the
+ * error channel — every tagged failure handled inside Effect — and a landed
+ * write invalidates `reactivityKeys`, so the read atoms built on those keys
+ * re-read from disk without anyone asking them to.
+ *
+ * There is one of these per *set of tables a write can touch*, rather than a
+ * single edge that invalidates everything. Over-invalidating is not merely
+ * wasteful: a re-read hands components a fresh array of freshly decoded
+ * objects, and any watcher keyed on that identity fires. Pausing a timer used
+ * to re-read presets, which re-ran the setup screen's "load preset into the
+ * form" watcher and wiped whatever the user had just typed. Invalidating only
+ * what a write actually changed keeps that class of bug from existing.
+ *
+ * The edge resolves to `void`: a program may succeed with anything, but a
+ * caller's answer is the invalidated read atom, never the write's own return
+ * value. `Effect.asVoid` says so in the type rather than leaking `unknown` out
+ * to every `@click` handler that awaits one.
+ */
+const mutationAtom = (reactivityKeys: ReadonlyArray<string>) =>
+  dbRuntime.fn((program: Effect.Effect<unknown, never, DbServices>) => Effect.asVoid(program), {
+    reactivityKeys,
+    concurrent: true,
+  })
+
+/** Timer state: create, pause, resume, split, finish, delete. */
+export const sessionMutation = mutationAtom([SESSIONS_KEY])
+
+/** Preset CRUD. */
+export const presetMutation = mutationAtom([PRESETS_KEY])
+
+/** Timer preferences. */
+export const settingsMutation = mutationAtom([SETTINGS_KEY])
+
+/** Starting a workout: writes the session *and* stamps the preset's `lastUsedAt`. */
+export const workoutStartMutation = mutationAtom([SESSIONS_KEY, PRESETS_KEY])
+
+/** Restoring a backup replaces every table, so it invalidates every key. */
+export const restoreMutation = mutationAtom([SESSIONS_KEY, PRESETS_KEY, SETTINGS_KEY])

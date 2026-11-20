@@ -1,0 +1,9 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "entry": ["index.html"],
+  "project": ["src/**/*.ts", "src/**/*.vue", "src/**/*.css"],
+  "ignore": ["src/components/ui/**"],
+  "vitest": {
+    "entry": ["src/__tests__/**/*.spec.ts", "src/__tests__/**/*.test.ts"]
+  }
+}
