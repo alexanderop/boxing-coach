@@ -15,12 +15,16 @@ import {
   setupConfigAtom,
   setupDraftAtom,
   setupKey,
+  setupKeyAtom,
+  setupModeAtom,
   toTimerConfig,
   updateCircuitBlock,
   type CircuitBlockDraft,
   type TimerSetupDraft,
 } from '@/features/timer/setupForm'
 import { TimerConfigSchema } from '@/db/converters'
+import { connectRoute } from '@/state/route'
+import { stubRouter } from '../../harness'
 import type { TimerMode } from '@/db'
 
 /**
@@ -398,5 +402,81 @@ describe('picker options', () => {
       label: '127s',
     })
     expect(roundOptions(37)).toContainEqual({ value: 37, label: '37' })
+  })
+})
+
+/**
+ * The home screen's shortcut: `/timer/boxing?program=classic` opens the setup
+ * already filled in. It only seeds the form — and only the boxing form, and
+ * only for a program that exists.
+ */
+describe('opening the setup on a ready-made program', () => {
+  async function setupAt(path: string) {
+    const registry = AtomRegistry.make()
+    const disconnect = connectRoute(await stubRouter(path), registry)
+    const key = registry.get(setupKeyAtom)
+
+    return {
+      mode: registry.get(setupModeAtom),
+      draft: registry.get(setupDraftAtom(key)),
+      config: registry.get(setupConfigAtom(key)),
+      edit: (patch: Partial<TimerSetupDraft>) => registry.set(setupDraftAtom(key), patch),
+      reread: () => registry.get(setupDraftAtom(key)),
+      disconnect,
+    }
+  }
+
+  it("fills the boxing form with the program's rounds and themes", async () => {
+    const setup = await setupAt('/timer/boxing?program=classic')
+
+    expect(setup.mode).toBe('boxing')
+    expect(setup.draft).toMatchObject({ rounds: 6, workSeconds: 180, restSeconds: 60 })
+    expect(setup.draft.themes).toEqual(['warmup', 'power', 'power', 'speed', 'speed', 'endurance'])
+    expect(boxingProgramOf(setup.draft.themes)).toBe('classic')
+    setup.disconnect()
+  })
+
+  it('opens the shorter program on its own rounds', async () => {
+    const setup = await setupAt('/timer/boxing?program=beginner')
+
+    expect(setup.config).toMatchObject({ mode: 'boxing', rounds: 3, workMs: 120_000 })
+    setup.disconnect()
+  })
+
+  /** The seed is a starting point: an edit still wins over it. */
+  it('leaves every field editable', async () => {
+    const setup = await setupAt('/timer/boxing?program=classic')
+
+    setup.edit({ rounds: 4 })
+
+    expect(setup.reread()).toMatchObject({ rounds: 4, workSeconds: 180 })
+    setup.disconnect()
+  })
+
+  it('starts from the plain defaults without a program, or with one it does not know', async () => {
+    const plain = await setupAt('/timer/boxing')
+    const unknown = await setupAt('/timer/boxing?program=sparring')
+    const freestyle = await setupAt('/timer/boxing?program=freestyle')
+
+    for (const setup of [plain, unknown, freestyle]) {
+      expect(setup.draft).toMatchObject({ rounds: 6, themes: [] })
+      setup.disconnect()
+    }
+  })
+
+  it('ignores a program on any other mode', async () => {
+    const setup = await setupAt('/timer/tabata?program=classic')
+
+    expect(setup.mode).toBe('tabata')
+    expect(setup.config).toEqual({ mode: 'tabata', workMs: 20_000, restMs: 10_000, rounds: 8 })
+    setup.disconnect()
+  })
+
+  /** A hand-typed URL should still show a usable screen. */
+  it('falls back to AMRAP for a mode that does not exist', async () => {
+    const setup = await setupAt('/timer/sparring')
+
+    expect(setup.mode).toBe('amrap')
+    setup.disconnect()
   })
 })

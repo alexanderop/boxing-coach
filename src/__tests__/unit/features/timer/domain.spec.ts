@@ -1,8 +1,8 @@
 import { describe, expect, it } from '@effect/vitest'
 import { Result, Schema } from 'effect'
 import { FastCheck } from 'effect/testing'
+import { BOXING_PROGRAMS } from '@/features/timer/programs'
 import {
-  BOXING_PROGRAMS,
   boxingThemeAt,
   capturesRoundSplits,
   coachesByVoice,
@@ -399,6 +399,33 @@ describe('timer domain', () => {
     )
     expect(boxingThemeAt([], 1)).toBeUndefined()
     expect(boxingThemeAt(['power'], 0)).toBe('power')
+  })
+
+  /** A finished workout has no round to name and none to look ahead to. */
+  it('offers no coaching once the workout is over', () => {
+    const done = deriveTimer(
+      session(
+        { ...DEFAULT_CONFIGS.boxing, themes: ['warmup', 'speed'] },
+        { status: 'completed', finishedAt: 5_000_000 },
+      ),
+      6_000_000,
+    )
+
+    expect(done.phase).toBe('finished')
+    expect(done).not.toHaveProperty('upNext')
+    expect(done).not.toHaveProperty('theme')
+  })
+
+  it("bounds a boxing session's own combinations and its themes", () => {
+    const boxing = DEFAULT_CONFIGS.boxing
+    const combos = (count: number) => Array.from({ length: count }, () => 'combo-01')
+    const themes = (count: number) => Array.from({ length: count }, () => 'speed' as const)
+
+    expect(isTimerConfig({ ...boxing, pool: combos(60) })).toBe(true)
+    expect(isTimerConfig({ ...boxing, pool: combos(61) })).toBe(false)
+    expect(isTimerConfig({ ...boxing, themes: themes(30) })).toBe(true)
+    expect(isTimerConfig({ ...boxing, themes: themes(31) })).toBe(false)
+    expect(isTimerConfig({ ...boxing, themes: ['warmup', 'combos', 'endurance'] })).toBe(true)
   })
 
   it('ships programs with one round per theme', () => {

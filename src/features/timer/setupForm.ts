@@ -1,7 +1,6 @@
 import { Atom } from '@effect/atom-vue'
 import { BOXING_PACES_MS, isPresetDraft } from '@/db'
 import {
-  BOXING_PROGRAMS,
   DEFAULT_CIRCUIT_BLOCKS,
   DEFAULT_CONFIGS,
   isTimerConfig,
@@ -19,6 +18,7 @@ import {
 import { routeParamAtom, routeQueryAtom } from '@/state/route'
 import { presetListAtom, timerSettingsValueAtom } from '@/state/timerData'
 import { practisedCombos } from '@/features/timer/combos'
+import { BOXING_PROGRAMS } from '@/features/timer/programs'
 import type { PresetDraft, TimerConfig, TimerMode, TimerPreset } from '@/db'
 
 export const MAX_TIMER_DURATION_SECONDS = 24 * 60 * 60
