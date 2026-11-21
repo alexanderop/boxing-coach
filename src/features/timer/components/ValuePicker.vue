@@ -65,7 +65,7 @@ function updateValue(event: Event): void {
     </div>
     <button
       type="button"
-      class="mt-2 min-h-touch-target w-full select-none touch-manipulation rounded-xl border border-dashed bg-background px-3 text-sm font-semibold text-muted-foreground transition-[color,border-color,scale] duration-100 hover:border-foreground/40 hover:text-foreground active:scale-[0.98]"
+      class="mt-2 min-h-touch-target w-full select-none touch-manipulation rounded-xl border bg-background px-3 text-sm font-semibold transition-[border-color,scale] duration-100 hover:border-foreground/40 active:scale-[0.98]"
       :class="customOpen ? 'border-[var(--mode-color)] text-foreground' : ''"
       :aria-expanded="customOpen"
       :aria-controls="`${id}-custom`"

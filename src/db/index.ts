@@ -23,6 +23,7 @@ export {
   isActiveSession,
   isFinishedSession,
   isPresetDraft,
+  sameTimerConfig,
   SKILL_LEVELS,
   START_COUNTDOWN_OPTIONS,
 } from './converters'

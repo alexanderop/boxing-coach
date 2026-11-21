@@ -64,7 +64,10 @@ function formatDate(timestamp: number): string {
         v-else-if="sessions.length === 0"
         class="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground"
       >
-        {{ t('history.empty') }}
+        <p>{{ t('history.empty') }}</p>
+        <Button class="mt-4" @click="router.push({ name: RouteNames.timer })">
+          {{ t('plan.title') }}
+        </Button>
       </div>
       <ul v-else class="flex list-none flex-col gap-3 p-0">
         <li v-for="session in sessions" :key="session.id">

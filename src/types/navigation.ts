@@ -12,6 +12,8 @@ import type { RouteName } from '@/router/routeNames'
  */
 export type NavItem = {
   routeName: RouteName
+  /** Screens reached from this tab; it stays current on them. */
+  within?: ReadonlyArray<RouteName>
   icon: Component
   label: string
 }

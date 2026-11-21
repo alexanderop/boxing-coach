@@ -6,6 +6,7 @@ import {
   callSteps,
   callStyleOf,
   currentCall,
+  sessionCalls,
   STARTER_COMBOS,
   voiceCueFor,
   type CueSession,
@@ -705,5 +706,84 @@ describe('the 3-2-1', () => {
   it('has no clip for any other second', () => {
     expect(countdownVoiceCue(4)).toBeUndefined()
     expect(countdownVoiceCue(0)).toBeUndefined()
+  })
+})
+
+describe('a reaction drill', () => {
+  type Boxing = Extract<CueSession['config'], { mode: 'boxing' }>
+  const drill = (pool: ReadonlyArray<string>, patch: Partial<Boxing> = {}): CueSession => ({
+    id: 'session-1',
+    config: { ...DEFAULT_CONFIGS.boxing, callouts: 'mine', paceMs: 3_000, pool, ...patch },
+  })
+  /** What is on screen in each three-second slot of a three-minute round; `''` where she is silent. */
+  const slots = (bout: CueSession) =>
+    Array.from({ length: 55 }, (_, slot) =>
+      currentCall(remaining(180_000 - slot * 3_000, 180_000), bout),
+    )
+  const spoken = (bout: CueSession, elapsedMs: number) =>
+    voiceCueFor(
+      remaining(180_100 - elapsedMs, 180_000),
+      remaining(180_000 - elapsedMs, 180_000),
+      bout,
+    )
+
+  /** Nothing to memorise, and the point is not knowing what comes next. */
+  it('makes every call a new one instead of repeating it three times', () => {
+    const calls = slots(drill(['def-slip', 'def-roll', 'def-block', 'def-pull']))
+
+    expect(new Set(calls.filter((call) => call !== ''))).toEqual(
+      new Set(['def-slip', 'def-roll', 'def-block', 'def-pull']),
+    )
+    // Two slots either side of a time call may match: the silence between them is the break.
+    expect(calls.some((call, index) => call !== '' && call === calls[index - 1])).toBe(false)
+  })
+
+  it('still repeats a combination three times when the pool mixes moves and combinations', () => {
+    const calls = slots(drill(['def-slip', 'combo-05', 'combo-09']))
+
+    expect(calls.slice(0, 4)).toEqual(['', calls[1], calls[1], calls[1]])
+    expect(calls[1]).not.toBe('')
+  })
+
+  /** A move has no punch number: "Slip" is "Slip" in either style. */
+  it('says a move by its name even when combinations are called by number', () => {
+    const bout = drill(['def-parry'], { callsAs: 'numbers' })
+
+    expect(spoken(bout, 3_000)).toBe('def-parry')
+    expect(callSteps('def-parry', 'numbers')).toEqual([{ label: 'Parry', side: undefined }])
+    expect(callSteps('def-step-back')).toEqual([{ label: 'Step back', side: undefined }])
+  })
+
+  it('calls a counter by number like any other combination, keeping the move as a word', () => {
+    expect(spoken(drill(['combo-34'], { callsAs: 'numbers' }), 3_000)).toBe('num-34')
+    expect(callSteps('combo-34', 'numbers')).toEqual([
+      { label: 'Parry', side: undefined },
+      { label: '1', side: 'L' },
+      { label: '2', side: 'R' },
+    ])
+  })
+})
+
+describe('what a session practised', () => {
+  type Boxing = Extract<CueSession['config'], { mode: 'boxing' }>
+  const boxing = (patch: Partial<Boxing>): Boxing => ({ ...DEFAULT_CONFIGS.boxing, ...patch })
+
+  it('is the pool the session called from', () => {
+    expect(sessionCalls(boxing({ callouts: 'mine', pool: ['combo-05', 'def-slip'] }))).toEqual([
+      'combo-05',
+      'def-slip',
+    ])
+    expect(sessionCalls(boxing({ callouts: 'mine', pool: [] }))).toEqual([...STARTER_COMBOS])
+    expect(sessionCalls(boxing({ callouts: 'advanced' }))).toHaveLength(39)
+    expect(sessionCalls(boxing({ callouts: 'basic' }))).toHaveLength(15)
+  })
+
+  it('is nothing for a silent session, a session without a free round, or another mode', () => {
+    expect(sessionCalls(boxing({ callouts: 'off' }))).toEqual([])
+    expect(sessionCalls(boxing({ callouts: 'basic', themes: ['power'] }))).toEqual([])
+    expect(sessionCalls(boxing({ callouts: 'basic', themes: ['power', 'combos'] }))).toHaveLength(
+      15,
+    )
+    expect(sessionCalls(DEFAULT_CONFIGS.tabata)).toEqual([])
   })
 })

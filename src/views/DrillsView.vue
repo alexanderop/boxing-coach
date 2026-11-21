@@ -8,6 +8,7 @@ import PageLayout from '@/components/PageLayout.vue'
 import { Button } from '@/components/ui/button'
 import { createSession, settingsMutation, workoutStartMutation } from '@/db'
 import { hasActiveSessionAtom, skillsAtom } from '@/features/timer/atoms'
+import ReactionDrillCard from '@/features/timer/components/ReactionDrillCard.vue'
 import SkillPicker from '@/features/timer/components/SkillPicker.vue'
 import { countSkills, saveSkill, skillOf, type SkillLevel } from '@/features/timer/combos'
 import {
@@ -91,6 +92,7 @@ async function start(drill: Drill): Promise<void> {
 
       <section v-for="group in DRILL_GROUPS" :key="group" class="flex flex-col gap-3">
         <h2 class="text-section-title font-semibold">{{ t(`drills.groups.${group}`) }}</h2>
+        <ReactionDrillCard v-if="group === 'defense'" />
         <article
           v-for="drill in drillsIn(group)"
           :key="drill.id"

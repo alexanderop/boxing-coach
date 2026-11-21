@@ -179,6 +179,18 @@ export const TimerConfigSchema = Schema.Union([
 /** A union, so this is a `type` — the `interface … extends` idiom below only fits structs. */
 export type TimerConfig = typeof TimerConfigSchema.Type
 
+const encodeTimerConfig = Schema.encodeSync(TimerConfigSchema)
+
+/**
+ * Whether two configs describe the same workout. Both sides go through the
+ * schema first, which writes the fields in its own order — so a config built
+ * in code and the same one read back from a row compare equal whatever order
+ * their keys happened to be written in.
+ */
+export function sameTimerConfig(a: TimerConfig, b: TimerConfig): boolean {
+  return JSON.stringify(encodeTimerConfig(a)) === JSON.stringify(encodeTimerConfig(b))
+}
+
 /** Derived from the configs rather than restated, so a new mode cannot be forgotten here. */
 export type TimerMode = TimerConfig['mode']
 

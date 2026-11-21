@@ -43,9 +43,11 @@ describe('boxing coach', () => {
   })
 
   /** A drill is a circuit the timer already runs, under its own block names. */
-  it('starts a jump rope drill under its block names', async ({ drills: timer }) => {
+  it('starts a jump rope drill under its block names', async ({ drills: _screen }) => {
     await page.getByRole('button', { name: 'Start' }).first().click()
-    await timer.run.expectPhase('Basic bounce')
+    // The run screen is titled with the drill, and the ring names the block.
+    await expect.element(page.getByRole('heading', { name: 'Basic bounce' })).toBeVisible()
+    await expect.element(page.getByText('Round 1 of 3')).toBeVisible()
 
     expect(await storedSessions()).toMatchObject([
       {
@@ -59,5 +61,45 @@ describe('boxing coach', () => {
     await page.getByRole('button', { name: 'Learning', exact: true }).first().click()
 
     await expect.poll(storedSkills).toEqual({ 'drill:rope-basic': 'learning' })
+  })
+
+  it('records a defensive move as known', async ({ techniqueDetail: _screen }) => {
+    await expect.element(page.getByRole('heading', { name: 'Slip', exact: true })).toBeVisible()
+    await page.getByRole('button', { name: 'Known', exact: true }).click()
+
+    await expect.poll(storedSkills).toEqual({ 'technique:slip': 'known' })
+  })
+
+  /** One move, two rounds, called every five seconds. */
+  it('starts a drill on a single defensive move', async ({ techniqueDetail: timer }) => {
+    await page.getByRole('button', { name: 'Drill this move' }).click()
+    await timer.run.expectRunning()
+
+    expect(await storedSessions()).toMatchObject([
+      { workoutNotes: 'Slip', config: { mode: 'boxing', pool: ['def-slip'], paceMs: 5_000 } },
+    ])
+  })
+
+  /** Nothing marked yet, so the coach calls the three starter moves. */
+  it('starts a reaction drill from the technique library', async ({ technique: timer }) => {
+    await page.getByRole('button', { name: 'Start reaction drill' }).click()
+    await timer.run.expectRunning()
+
+    expect(await storedSessions()).toMatchObject([
+      {
+        workoutNotes: 'Reaction drill',
+        config: { callouts: 'mine', paceMs: 3_000, pool: ['def-slip', 'def-roll', 'def-block'] },
+      },
+    ])
+  })
+
+  it("starts the first step of today's training from the home screen", async ({ timer }) => {
+    await expect.element(page.getByRole('heading', { name: "Today's training" })).toBeVisible()
+    await page.getByRole('button', { name: 'Start: Warm-up' }).click()
+    await timer.run.expectPhase('Basic bounce')
+
+    expect(await storedSessions()).toMatchObject([
+      { workoutNotes: 'Warm-up · Basic bounce', config: { mode: 'custom', repeat: 3 } },
+    ])
   })
 })

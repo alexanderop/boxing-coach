@@ -63,8 +63,43 @@ const ADVANCED_COMBOS = [
   'combo-26',
   'combo-29',
 ] as const
+/**
+ * Defense with a punch behind it: a slip, a block, a parry, a pull or a step
+ * that ends in a counter, or a combination that ends by getting out. Their own
+ * set because they are learned after the moves themselves — a counter is two
+ * skills at once.
+ */
+const COUNTER_COMBOS = [
+  'combo-31',
+  'combo-32',
+  'combo-33',
+  'combo-34',
+  'combo-35',
+  'combo-36',
+  'combo-37',
+  'combo-38',
+  'combo-39',
+] as const
 
-export type ComboCue = (typeof BASIC_COMBOS)[number] | (typeof ADVANCED_COMBOS)[number]
+/**
+ * The defensive moves on their own, one word each — what a reaction drill
+ * calls. No punch, so no number: "Slip" is "Slip" in either call style.
+ */
+export const DEFENSE_MOVES = [
+  'def-slip',
+  'def-roll',
+  'def-block',
+  'def-parry',
+  'def-pull',
+  'def-step-back',
+  'def-pivot',
+] as const
+export type DefenseCue = (typeof DEFENSE_MOVES)[number]
+
+export type ComboCue =
+  | (typeof BASIC_COMBOS)[number]
+  | (typeof ADVANCED_COMBOS)[number]
+  | (typeof COUNTER_COMBOS)[number]
 /** The same combination called by punch number: `combo-05` is also `num-05`. */
 type NumberCue = ComboCue extends `combo-${infer Index}` ? `num-${Index}` : never
 
@@ -74,7 +109,7 @@ function asNumbers(cue: ComboCue): NumberCue {
   return `num-${cue.slice('combo-'.length)}` as NumberCue
 }
 
-const NUMBER_COMBOS = [...BASIC_COMBOS, ...ADVANCED_COMBOS].map(asNumbers)
+const NUMBER_COMBOS = [...BASIC_COMBOS, ...ADVANCED_COMBOS, ...COUNTER_COMBOS].map(asNumbers)
 
 /** The clip that calls a combination in the given style. */
 export function comboClip(combo: ComboCue, callsAs: BoxingConfig['callsAs']): VoiceCue {
@@ -111,6 +146,8 @@ export const VOICE_CUES = [
   ...ROUND_CUES,
   ...BASIC_COMBOS,
   ...ADVANCED_COMBOS,
+  ...COUNTER_COMBOS,
+  ...DEFENSE_MOVES,
   ...NUMBER_COMBOS,
   ...THEME_INTROS,
   ...NEXT_UP,
@@ -120,10 +157,7 @@ export const VOICE_CUES = [
 export type VoiceCue = (typeof VOICE_CUES)[number]
 
 /** The lines called *inside* a boxing round — the ones the screen also shows as text. */
-export type CallCue =
-  | (typeof BASIC_COMBOS)[number]
-  | (typeof ADVANCED_COMBOS)[number]
-  | (typeof SPEED_CALLS)[number]
+export type CallCue = ComboCue | DefenseCue | (typeof SPEED_CALLS)[number]
 
 /** The clip for a 3-2-1 tick. */
 export function countdownVoiceCue(second: number): VoiceCue | undefined {
@@ -154,12 +188,28 @@ function phaseDurationMs(remainingMs: number, progress: number): number | undefi
 type BoxingConfig = Extract<TimerConfig, { mode: 'boxing' }>
 
 /** Every combination there is a clip for, basics first. */
-export const ALL_COMBOS = [...BASIC_COMBOS, ...ADVANCED_COMBOS] as const
+export const ALL_COMBOS = [...BASIC_COMBOS, ...ADVANCED_COMBOS, ...COUNTER_COMBOS] as const
+
+/** The sets in the order they are learned. */
+export const COMBO_LEVELS = ['basic', 'advanced', 'counter'] as const
+export type ComboLevel = (typeof COMBO_LEVELS)[number]
 
 /** Which set a combination belongs to — the basics need only the jab, the cross and the hook. */
-export function comboLevel(combo: ComboCue): 'basic' | 'advanced' {
-  return BASIC_COMBOS.some((basic) => basic === combo) ? 'basic' : 'advanced'
+export function comboLevel(combo: ComboCue): ComboLevel {
+  if (BASIC_COMBOS.some((basic) => basic === combo)) return 'basic'
+  return COUNTER_COMBOS.some((counter) => counter === combo) ? 'counter' : 'advanced'
 }
+
+function isCombo(cue: CallCue): cue is ComboCue {
+  return ALL_COMBOS.some((combo) => combo === cue)
+}
+
+function isDefenseMove(cue: CallCue): cue is DefenseCue {
+  return DEFENSE_MOVES.some((move) => move === cue)
+}
+
+/** Everything a session can be told to call by id: the combinations, then the moves. */
+const OWN_CALLS = [...ALL_COMBOS, ...DEFENSE_MOVES] as const
 
 /**
  * What a session set to "my combinations" calls before the athlete has
@@ -172,9 +222,10 @@ export const STARTER_COMBOS = ['combo-01', 'combo-03', 'combo-04'] as const
  * The combinations a session calls from, by the level it was set up with.
  * `mine` is the athlete's own list as it stood when the workout started —
  * read back through the catalogue, so an id that no longer has a clip is
- * dropped rather than called.
+ * dropped rather than called. A reaction drill is the same thing with the
+ * defensive moves in the list instead of combinations.
  */
-function comboPool(config: BoxingConfig): ReadonlyArray<ComboCue> {
+function comboPool(config: BoxingConfig): ReadonlyArray<ComboCue | DefenseCue> {
   switch (config.callouts) {
     case 'off':
       return []
@@ -183,7 +234,7 @@ function comboPool(config: BoxingConfig): ReadonlyArray<ComboCue> {
     case 'advanced':
       return ALL_COMBOS
     case 'mine': {
-      const own = ALL_COMBOS.filter((combo) => config.pool.includes(combo))
+      const own = OWN_CALLS.filter((call) => config.pool.includes(call))
       return own.length === 0 ? STARTER_COMBOS : own
     }
   }
@@ -289,8 +340,11 @@ const COMBO_REPEATS = 3
  */
 function comboAt(sessionId: string, round: number, slot: number, pool: ReadonlyArray<CallCue>) {
   const pick = (at: number): number => hash(`${sessionId}:${round}:${at}`) % pool.length
+  // A pool of single moves is a reaction drill: there is nothing to memorise,
+  // and the point is not knowing what comes next — so every slot is a new call.
+  const repeats = pool.every(isDefenseMove) ? 1 : COMBO_REPEATS
   // Slots count from 1 — the bell itself is never a call.
-  const set = Math.floor((slot - 1) / COMBO_REPEATS)
+  const set = Math.floor((slot - 1) / repeats)
   const index = pick(set)
   return pool[index === pick(set - 1) ? (index + 1) % pool.length : index]
 }
@@ -352,9 +406,8 @@ function roundCall(
   const now = callInSlot(session, config, round, left)
   if (now.slot === callInSlot(session, config, round, before).slot) return undefined
   const { cue } = now
-  // The sprint calls have no number; everything else in a round is a combination.
-  if (cue === undefined || cue === 'fast-hands' || cue === 'easy-breathe') return cue
-  return comboClip(cue, config.callsAs)
+  // Only a combination has a number: a sprint call or a single move is said one way.
+  return cue !== undefined && isCombo(cue) ? comboClip(cue, config.callsAs) : cue
 }
 
 /** Which hand throws a punch, by stance rather than by side: the jab hand, or the power hand. */
@@ -378,6 +431,11 @@ const BODY_JAB = ['Jab to the body', 'lead', '1 body'] as const
 const BODY_HOOK = ['Hook to the body', 'lead', '3 body'] as const
 const SLIP = ['Slip'] as const
 const ROLL = ['Roll'] as const
+const BLOCK = ['Block'] as const
+const PARRY = ['Parry'] as const
+const PULL = ['Pull'] as const
+const STEP_BACK = ['Step back'] as const
+const PIVOT = ['Pivot'] as const
 
 /**
  * What each call says, word for word, and which hand throws each punch.
@@ -421,6 +479,22 @@ const CALL_STEPS = {
   'combo-28': [HOOK, CROSS, HOOK],
   'combo-29': [JAB, CROSS, BODY_HOOK, HOOK],
   'combo-30': [CROSS, HOOK, CROSS, HOOK],
+  'combo-31': [SLIP, SLIP, CROSS],
+  'combo-32': [JAB, SLIP, CROSS, HOOK],
+  'combo-33': [BLOCK, CROSS, HOOK],
+  'combo-34': [PARRY, JAB, CROSS],
+  'combo-35': [PULL, CROSS],
+  'combo-36': [JAB, CROSS, PULL, CROSS],
+  'combo-37': [JAB, CROSS, HOOK, ROLL],
+  'combo-38': [STEP_BACK, JAB, CROSS],
+  'combo-39': [JAB, CROSS, PIVOT],
+  'def-slip': [SLIP],
+  'def-roll': [ROLL],
+  'def-block': [BLOCK],
+  'def-parry': [PARRY],
+  'def-pull': [PULL],
+  'def-step-back': [STEP_BACK],
+  'def-pivot': [PIVOT],
   'fast-hands': [['Fast hands']],
   'easy-breathe': [['Easy'], ['Breathe']],
 } satisfies Readonly<Record<CallCue, ReadonlyArray<CallStep>>>
@@ -565,4 +639,15 @@ export function voiceCueFor(
     themeCue(config, state, before, left) ??
     (state.phase === 'work' ? roundCall(session, config, state.round, before, left) : undefined)
   )
+}
+
+/**
+ * The combinations and moves a session was set up to call — what a finished
+ * workout counts as practice of. A themed session only calls in its `combos`
+ * rounds, so one without any practised nothing in particular.
+ */
+export function sessionCalls(config: TimerConfig): ReadonlyArray<ComboCue | DefenseCue> {
+  if (config.mode !== 'boxing' || config.callouts === 'off') return []
+  const calls = config.themes.length === 0 || config.themes.includes('combos')
+  return calls ? comboPool(config) : []
 }

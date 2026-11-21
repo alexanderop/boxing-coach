@@ -8,15 +8,13 @@ import { COMBO_FILTERS, comboFilterAtom, skillsAtom } from '@/features/timer/ato
 import { chipClass } from '@/features/timer/components/chip'
 import ComboSteps from '@/features/timer/components/ComboSteps.vue'
 import { COMBOS, comboNumbers, countSkills, skillOf, type Combo } from '@/features/timer/combos'
-import { callSteps } from '@/features/timer/voiceCues'
+import { callSteps, COMBO_LEVELS } from '@/features/timer/voiceCues'
 import { RouteNames } from '@/router/routeNames'
 
 const { t } = useI18n()
 const router = useRouter()
 const skills = useAtomValue(() => skillsAtom)
 const [filter, setFilter] = useAtom(() => comboFilterAtom)
-
-const LEVELS = ['basic', 'advanced'] as const
 
 const progress = () =>
   countSkills(
@@ -73,7 +71,7 @@ function open(combo: Combo): void {
         </button>
       </div>
 
-      <section v-for="level in LEVELS" :key="level" class="flex flex-col gap-3">
+      <section v-for="level in COMBO_LEVELS" :key="level" class="flex flex-col gap-3">
         <h2 class="text-section-title font-semibold">{{ t(`combos.levels.${level}`) }}</h2>
         <p
           v-if="shown(level).length === 0"

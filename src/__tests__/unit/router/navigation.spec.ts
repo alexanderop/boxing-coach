@@ -14,10 +14,10 @@ describe('bottom navigation', () => {
   it('translates every tab from the catalogue', () => {
     expect(navItems(translate).map((item) => item.label)).toEqual([
       'Train',
+      'Technique',
       'Combos',
       'Drills',
       'History',
-      'Settings',
     ])
   })
 

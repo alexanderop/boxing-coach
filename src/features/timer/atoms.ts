@@ -11,6 +11,8 @@ import {
 import { routeParamAtom } from '@/state/route'
 import { deriveTimer, finalResult, sortPresets, sortSessions } from '@/features/timer/domain'
 import { parseCombo } from '@/features/timer/combos'
+import { dayStreak, dueForReview, startOfDay, weeklyTotals } from '@/features/timer/progress'
+import { parseTechnique } from '@/features/timer/technique'
 import { callStyleOf, currentCall, type CallCue } from '@/features/timer/voiceCues'
 import type { WorkoutSession } from '@/db'
 import type { DerivedTimer, HistoryFilter } from '@/features/timer/domain'
@@ -213,3 +215,28 @@ export const comboFilterAtom = Atom.make<ComboFilter>('all')
 
 /** The combination a detail screen is showing, from `/combos/:id`. */
 export const routeComboAtom = Atom.make((get) => parseCombo(get(routeParamAtom('id'))))
+
+/** The technique a detail screen is showing, from `/technique/:id`. */
+export const routeTechniqueAtom = Atom.make((get) => parseTechnique(get(routeParamAtom('id'))))
+
+/**
+ * Midnight of the current day. Read off a minute clock, and a number — so
+ * everything derived from it republishes once a day, not once a minute.
+ */
+export const todayAtom = Atom.map(clockAtom(60_000), startOfDay)
+
+/** Every workout on disk, for the derivations a screen builds with its own translator. */
+export const sessionsAtom = Atom.map(sessionListAtom, (sessions) => sessions)
+
+/** Training per week for the last eight weeks, this one last. */
+export const weeklyTotalsAtom = Atom.make((get) =>
+  weeklyTotals(get(sessionListAtom), get(todayAtom)),
+)
+
+/** Days in a row with a finished workout. */
+export const dayStreakAtom = Atom.make((get) => dayStreak(get(sessionListAtom), get(todayAtom)))
+
+/** The known combinations that have gone a week without being called. */
+export const reviewDueAtom = Atom.make((get) =>
+  dueForReview(get(skillsAtom), get(sessionListAtom), get(todayAtom)),
+)

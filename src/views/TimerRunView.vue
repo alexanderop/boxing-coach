@@ -100,7 +100,7 @@ function persistCompletion(
 
 const phaseLabel = (): string => runPhaseName(session.value?.status, derived.value, t)
 
-const currentModeName = (): string => modeName(mode(), t)
+const currentModeName = (): string => session.value?.workoutNotes || modeName(mode(), t)
 
 async function togglePause(): Promise<void> {
   const current = session.value
@@ -176,7 +176,7 @@ function toggleSound(): Promise<void> {
       >
         <X />
       </Button>
-      <h1 class="font-bold tracking-widest">{{ currentModeName() }}</h1>
+      <h1 class="min-w-0 truncate font-bold tracking-wide">{{ currentModeName() }}</h1>
       <Button
         variant="ghost"
         size="icon"

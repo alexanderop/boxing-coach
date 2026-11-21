@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useAtomValue } from '@effect/atom-vue'
-import { Bookmark, ChevronRight, Dumbbell, Play, Swords } from '@lucide/vue'
+import { ChevronRight, Play, Settings, Swords } from '@lucide/vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import PageLayout from '@/components/PageLayout.vue'
@@ -12,6 +12,9 @@ import {
   skillsAtom,
 } from '@/features/timer/atoms'
 import ComboSteps from '@/features/timer/components/ComboSteps.vue'
+import ReviewCard from '@/features/timer/components/ReviewCard.vue'
+import TodayPlan from '@/features/timer/components/TodayPlan.vue'
+import WeekProgress from '@/features/timer/components/WeekProgress.vue'
 import { COMBOS, countSkills, nextComboToLearn } from '@/features/timer/combos'
 import { configSummary } from '@/features/timer/labels'
 import { BOXING_PROGRAM_CHOICES } from '@/features/timer/setupForm'
@@ -51,6 +54,16 @@ function openProgram(program: (typeof BOXING_PROGRAM_CHOICES)[number]): void {
     :show-back="false"
     data-mode="boxing"
   >
+    <template #header-actions>
+      <Button
+        variant="ghost"
+        size="icon"
+        :aria-label="t('nav.settings')"
+        @click="router.push({ name: RouteNames.settings })"
+      >
+        <Settings class="size-5" />
+      </Button>
+    </template>
     <div class="mx-auto flex w-full max-w-lg flex-col gap-section p-4">
       <div v-if="loadFailed" role="alert" class="rounded-xl border border-dashed p-6 text-center">
         <p class="text-sm text-muted-foreground">{{ t('common.loadError') }}</p>
@@ -79,6 +92,10 @@ function openProgram(program: (typeof BOXING_PROGRAM_CHOICES)[number]): void {
           {{ t('timer.resume.action') }}
         </Button>
       </section>
+
+      <TodayPlan />
+      <WeekProgress />
+      <ReviewCard />
 
       <!-- Where the athlete stands, and the one thing to work on next. -->
       <section class="rounded-2xl border bg-card p-4 shadow-xs" aria-labelledby="progress-heading">
@@ -148,33 +165,15 @@ function openProgram(program: (typeof BOXING_PROGRAM_CHOICES)[number]): void {
               {{ t(`home.programs.${program}.description`) }}
             </span>
           </span>
-          <span class="text-2xl text-[var(--mode-color)]" aria-hidden="true">›</span>
+          <ChevronRight class="size-5 shrink-0 text-muted-foreground" aria-hidden="true" />
         </button>
       </section>
 
-      <section class="flex flex-col gap-3" aria-labelledby="drills-heading">
-        <h2 id="drills-heading" class="text-section-title font-semibold">{{ t('home.drills') }}</h2>
-        <button
-          type="button"
-          class="flex min-h-20 w-full select-none touch-manipulation items-center gap-4 rounded-2xl border bg-card p-4 text-left shadow-xs transition-transform duration-100 active:scale-[0.99]"
-          @click="router.push({ name: RouteNames.drills })"
-        >
-          <span
-            class="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-muted text-foreground"
-          >
-            <Dumbbell class="size-6" aria-hidden="true" />
-          </span>
-          <span class="min-w-0 flex-1">
-            <span class="block text-lg font-bold tracking-tight">{{ t('home.drills') }}</span>
-            <span class="mt-0.5 block text-sm text-muted-foreground">
-              {{ t('home.drillsHint') }}
-            </span>
-          </span>
-          <span class="text-2xl text-muted-foreground" aria-hidden="true">›</span>
-        </button>
-      </section>
-
-      <section class="flex flex-col gap-3" aria-labelledby="recent-presets-heading">
+      <section
+        v-if="recentPresets.length > 0"
+        class="flex flex-col gap-3"
+        aria-labelledby="recent-presets-heading"
+      >
         <div class="flex items-center justify-between gap-3">
           <h2 id="recent-presets-heading" class="text-section-title font-semibold">
             {{ t('timer.recentPresets') }}
@@ -184,16 +183,8 @@ function openProgram(program: (typeof BOXING_PROGRAM_CHOICES)[number]): void {
           </Button>
         </div>
 
-        <div
-          v-if="recentPresets.length === 0"
-          class="rounded-xl border border-dashed p-5 text-center"
-        >
-          <Bookmark class="mx-auto size-6 text-muted-foreground" aria-hidden="true" />
-          <p class="mt-2 text-sm text-muted-foreground">{{ t('timer.noPresets') }}</p>
-        </div>
         <button
           v-for="preset in recentPresets"
-          v-else
           :key="preset.id"
           type="button"
           :data-mode="preset.config.mode"

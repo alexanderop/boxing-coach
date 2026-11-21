@@ -46,8 +46,11 @@ const leftItems = (): ReadonlyArray<NavItem> =>
 const rightItems = (): ReadonlyArray<NavItem> =>
   hasCenterAction() ? items.slice(splitIndex()) : []
 
-function isActive(routeName: RouteName): boolean {
-  return activeRouteName.value === routeName
+function isActive(item: NavItem): boolean {
+  const current = activeRouteName.value
+  return (
+    current === item.routeName || (current !== undefined && item.within?.includes(current) === true)
+  )
 }
 
 function navigate(routeName: RouteName): void {
@@ -103,7 +106,7 @@ function navigate(routeName: RouteName): void {
           v-for="item in leftItems()"
           :key="item.routeName"
           :item="item"
-          :active="isActive(item.routeName)"
+          :active="isActive(item)"
           @select="navigate(item.routeName)"
         />
 
@@ -113,7 +116,7 @@ function navigate(routeName: RouteName): void {
           v-for="item in rightItems()"
           :key="item.routeName"
           :item="item"
-          :active="isActive(item.routeName)"
+          :active="isActive(item)"
           @select="navigate(item.routeName)"
         />
       </div>

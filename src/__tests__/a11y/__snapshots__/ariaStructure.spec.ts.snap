@@ -11,8 +11,8 @@ exports[`accessibility tree > the home screen exposes each bag session as a butt
 exports[`accessibility tree > the tab bar names all destinations 1`] = `
 - navigation "Main navigation":
   - button "Train"
+  - button "Technique"
   - button "Combos"
   - button "Drills"
   - button "History"
-  - button "Settings"
 `;

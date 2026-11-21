@@ -1,6 +1,13 @@
 import { SKILL_LEVELS, type TimerConfig, type TimerSettings, updateTimerSettings } from '@/db'
 import { MINUTE_MS, SECOND_MS } from '@/features/timer/domain'
-import { ALL_COMBOS, callSteps, comboLevel, type ComboCue } from '@/features/timer/voiceCues'
+import {
+  ALL_COMBOS,
+  callSteps,
+  COMBO_LEVELS,
+  comboLevel,
+  type ComboCue,
+  type ComboLevel,
+} from '@/features/timer/voiceCues'
 
 /**
  * The combination library, and how far along the athlete is with it.
@@ -17,7 +24,7 @@ export type Skills = TimerSettings['skills']
 
 export interface Combo {
   readonly id: ComboCue
-  readonly level: 'basic' | 'advanced'
+  readonly level: ComboLevel
   /** How many punches and movements it strings together — a double jab is two. */
   readonly length: number
 }
@@ -27,8 +34,8 @@ function comboLength(id: ComboCue): number {
 }
 
 /**
- * Every combination in the order worth learning it: the basics before the
- * advanced set, short before long. `toSorted` is stable, so combinations of
+ * Every combination in the order worth learning it: the basics, then the
+ * advanced set, then the counters, short before long. `toSorted` is stable, so combinations of
  * one length keep the catalogue's own order.
  */
 export const COMBOS: ReadonlyArray<Combo> = ALL_COMBOS.map((id) => ({
@@ -36,7 +43,7 @@ export const COMBOS: ReadonlyArray<Combo> = ALL_COMBOS.map((id) => ({
   level: comboLevel(id),
   length: comboLength(id),
 })).toSorted(
-  (a, b) => Number(a.level === 'advanced') - Number(b.level === 'advanced') || a.length - b.length,
+  (a, b) => COMBO_LEVELS.indexOf(a.level) - COMBO_LEVELS.indexOf(b.level) || a.length - b.length,
 )
 
 /** A route param is a string from the address bar: `undefined` means "not a combination". */

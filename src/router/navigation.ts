@@ -1,4 +1,4 @@
-import { Dumbbell, History, ListChecks, Settings, Swords } from '@lucide/vue'
+import { Dumbbell, History, ListChecks, Shield, Swords } from '@lucide/vue'
 import type { NavItem } from '@/types/navigation'
 import { RouteNames } from './routeNames'
 
@@ -13,11 +13,31 @@ import { RouteNames } from './routeNames'
 type NavItemConfig = Omit<NavItem, 'label'> & { readonly labelKey: string }
 
 const NAV_ITEMS: ReadonlyArray<NavItemConfig> = [
-  { routeName: RouteNames.timer, icon: Swords, labelKey: 'nav.timer' },
-  { routeName: RouteNames.combos, icon: ListChecks, labelKey: 'nav.combos' },
+  {
+    routeName: RouteNames.timer,
+    icon: Swords,
+    labelKey: 'nav.timer',
+    within: [RouteNames.timerSetup, RouteNames.presets, RouteNames.settings],
+  },
+  {
+    routeName: RouteNames.technique,
+    icon: Shield,
+    labelKey: 'nav.technique',
+    within: [RouteNames.techniqueDetail],
+  },
+  {
+    routeName: RouteNames.combos,
+    icon: ListChecks,
+    labelKey: 'nav.combos',
+    within: [RouteNames.comboDetail],
+  },
   { routeName: RouteNames.drills, icon: Dumbbell, labelKey: 'nav.drills' },
-  { routeName: RouteNames.history, icon: History, labelKey: 'nav.history' },
-  { routeName: RouteNames.settings, icon: Settings, labelKey: 'nav.settings' },
+  {
+    routeName: RouteNames.history,
+    icon: History,
+    labelKey: 'nav.history',
+    within: [RouteNames.sessionDetail],
+  },
 ]
 
 /**
@@ -33,9 +53,5 @@ const NAV_ITEMS: ReadonlyArray<NavItemConfig> = [
  * during render is what makes the shell re-render when the language changes.
  */
 export function navItems(t: (key: string) => string): Array<NavItem> {
-  return NAV_ITEMS.map(({ routeName, icon, labelKey }) => ({
-    routeName,
-    icon,
-    label: t(labelKey),
-  }))
+  return NAV_ITEMS.map(({ labelKey, ...item }) => ({ ...item, label: t(labelKey) }))
 }

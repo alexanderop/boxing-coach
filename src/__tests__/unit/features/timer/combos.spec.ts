@@ -24,17 +24,28 @@ import { callSteps } from '@/features/timer/voiceCues'
  * thing.
  */
 describe('the combination library', () => {
-  it('holds thirty combinations, half of them basics', () => {
-    expect(COMBOS).toHaveLength(30)
+  it('holds thirty-nine combinations: fifteen basics, fifteen advanced, nine counters', () => {
+    expect(COMBOS).toHaveLength(39)
     expect(COMBOS.filter((combo) => combo.level === 'basic')).toHaveLength(15)
-    expect(new Set(COMBOS.map((combo) => combo.id)).size).toBe(30)
+    expect(COMBOS.filter((combo) => combo.level === 'advanced')).toHaveLength(15)
+    expect(COMBOS.filter((combo) => combo.level === 'counter')).toHaveLength(9)
+    expect(new Set(COMBOS.map((combo) => combo.id)).size).toBe(39)
   })
 
-  /** Basics before the advanced set, short before long: the jab comes first. */
+  /** A counter is defense with a punch behind it, or a combination that ends by getting out. */
+  it('puts a defensive move in every counter', () => {
+    const moves = new Set(['Slip', 'Roll', 'Block', 'Parry', 'Pull', 'Step back', 'Pivot'])
+    for (const combo of COMBOS.filter((entry) => entry.level === 'counter')) {
+      expect(callSteps(combo.id).some((step) => moves.has(step.label))).toBe(true)
+    }
+    expect(comboNumbers('combo-34')).toBe('Parry-1-2')
+  })
+
+  /** Basics, then the advanced set, then the counters, short before long: the jab comes first. */
   it('is ordered the way it is worth learning', () => {
     expect(COMBOS[0]).toEqual({ id: 'combo-01', level: 'basic', length: 1 })
-    expect(COMBOS.map((combo) => combo.level).join()).toMatch(/^(basic,)+(advanced,?)+$/)
-    for (const level of ['basic', 'advanced'] as const) {
+    expect(COMBOS.map((combo) => combo.level).join()).toMatch(/^(basic,)+(advanced,)+(counter,?)+$/)
+    for (const level of ['basic', 'advanced', 'counter'] as const) {
       const lengths = COMBOS.filter((combo) => combo.level === level).map((combo) => combo.length)
 
       expect(lengths).toEqual(lengths.toSorted((a, b) => a - b))

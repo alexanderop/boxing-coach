@@ -60,6 +60,18 @@ export const it = test
     onCleanup(() => timer.close())
     return timer
   })
+  .extend('technique', async ({}, { onCleanup }) => {
+    await prepareTimer()
+    const timer = await TimerScreen.open('/technique')
+    onCleanup(() => timer.close())
+    return timer
+  })
+  .extend('techniqueDetail', async ({}, { onCleanup }) => {
+    await prepareTimer()
+    const timer = await TimerScreen.open('/technique/slip')
+    onCleanup(() => timer.close())
+    return timer
+  })
   // The circuit builder, cold, through its deep link.
   .extend('circuitSetup', async ({}, { onCleanup }) => {
     await prepareTimer()

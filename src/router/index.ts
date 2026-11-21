@@ -43,6 +43,16 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import('@/views/ComboDetailView.vue'),
   },
   {
+    path: '/technique',
+    name: RouteNames.technique,
+    component: () => import('@/views/TechniqueView.vue'),
+  },
+  {
+    path: '/technique/:id',
+    name: RouteNames.techniqueDetail,
+    component: () => import('@/views/TechniqueDetailView.vue'),
+  },
+  {
     path: '/drills',
     name: RouteNames.drills,
     component: () => import('@/views/DrillsView.vue'),

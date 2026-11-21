@@ -2,8 +2,8 @@ import { SECOND_MS } from '@/features/timer/domain'
 import type { TimerConfig } from '@/db'
 
 /**
- * The drills around the punching: rope work, footwork, defense, and the
- * simple bag and shadow rounds that build everything else.
+ * The drills around the punching: rope work, footwork, a block of defense
+ * circuits, and the simple bag and shadow rounds that build everything else.
  *
  * A drill is a circuit the timer already knows how to run — named blocks of
  * work and rest, repeated — plus an animation and a level to track. Nothing
@@ -21,6 +21,17 @@ const DRILL_BLOCKS = [
   'slips',
   'rolls',
   'slipCounter',
+  'highGuard',
+  'parries',
+  'blockCounter',
+  'pullBacks',
+  'stepBacks',
+  'pullCounter',
+  'slipPivot',
+  'rollOut',
+  'defenseOnly',
+  'counterOnly',
+  'hitAndMove',
   'jabOnly',
   'jabCross',
   'freeCombos',
@@ -28,7 +39,7 @@ const DRILL_BLOCKS = [
 ] as const
 export type DrillBlock = (typeof DRILL_BLOCKS)[number]
 
-export const DRILL_GROUPS = ['rope', 'movement', 'punching'] as const
+export const DRILL_GROUPS = ['rope', 'movement', 'defense', 'punching'] as const
 export type DrillGroup = (typeof DRILL_GROUPS)[number]
 
 /** One block of a drill: what to do, or `rest`, and for how many seconds. */
@@ -85,11 +96,55 @@ export const DRILLS = [
   },
   {
     id: 'defense',
-    group: 'movement',
+    group: 'defense',
     steps: [
       ['slips', 45],
       ['rolls', 45],
       ['slipCounter', 45],
+      ['rest', 30],
+    ],
+    repeat: 2,
+  },
+  {
+    id: 'defense-guard',
+    group: 'defense',
+    steps: [
+      ['highGuard', 45],
+      ['parries', 45],
+      ['blockCounter', 45],
+      ['rest', 30],
+    ],
+    repeat: 2,
+  },
+  {
+    id: 'defense-distance',
+    group: 'defense',
+    steps: [
+      ['pullBacks', 45],
+      ['stepBacks', 45],
+      ['pullCounter', 45],
+      ['rest', 30],
+    ],
+    repeat: 2,
+  },
+  {
+    id: 'defense-angles',
+    group: 'defense',
+    steps: [
+      ['pivots', 45],
+      ['slipPivot', 45],
+      ['rollOut', 45],
+      ['rest', 30],
+    ],
+    repeat: 2,
+  },
+  {
+    id: 'defense-shadow',
+    group: 'defense',
+    steps: [
+      ['defenseOnly', 60],
+      ['counterOnly', 60],
+      ['hitAndMove', 60],
       ['rest', 30],
     ],
     repeat: 2,

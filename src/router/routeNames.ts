@@ -21,6 +21,8 @@ export const RouteNames = {
   combos: 'combos',
   comboDetail: 'combo-detail',
   drills: 'drills',
+  technique: 'technique',
+  techniqueDetail: 'technique-detail',
   history: 'history',
   sessionDetail: 'session-detail',
   presets: 'presets',
